@@ -144,26 +144,29 @@ stages:
                 $file = Get-Content "d:\a\1\s\GeneratedOutputFiles\$(databasename)_Script.sql"
                 $containsWord = $file | %{$_ -match "CREATE" -or $_ -match "ALTER TABLE" -or $_ -match "DROP"}
                 if ($containsWord -contains $true) {
-                  Install-Module VSTeam -Scope CurrentUser -Force
-                  Set-VSTeamAccount –Account $(Acct) -PersonalAccessToken $(PAT)
-                  $methodParameters = @{
-                    ProjectName = "$(System.TeamProject)"
-                    Name = "Release"}
-                  $vg = Get-VSTeamVariableGroup @methodParameters
-                  $vars = @{}
-                  $vg.variables | Get-Member -MemberType *Property | %{$vars.($_.Name) = $vg.variables.($_.Name)}
-                  $varName = "schemaChanged"
-                  $vars.$varName= @{}
-                  $vars.$varName.value = "True"
-                  $vars.$varName.isSecret = $false
-                  $methodParameters = @{
-                    id = $vg.id
-                    ProjectName = "$(System.TeamProject)"
-                    Name = "Release"
-                    Description = ""
-                    Type = "Vsts"
-                    Variables = $vars}
-                  Update-VSTeamVariableGroup @methodParameters} 
+                  $r = Get-VSTeamRelease -ProjectName "$(System.TeamProject)" -Id $(Release.ReleaseId) -Raw
+                  $r.variables | Add-Member NoteProperty schemaChanged([PSCustomObject]@{value='True'})
+                  Update-VSTeamRelease -ProjectName "$(System.TeamProject)" -Id $(Release.ReleaseId) -Release $r -Force
+                  # Install-Module VSTeam -Scope CurrentUser -Force
+                  # Set-VSTeamAccount –Account $(Acct) -PersonalAccessToken $(PAT)
+                  # $methodParameters = @{
+                  #   ProjectName = "$(System.TeamProject)"
+                  #   Name = "Release"}
+                  # $vg = Get-VSTeamVariableGroup @methodParameters
+                  # $vars = @{}
+                  # $vg.variables | Get-Member -MemberType *Property | %{$vars.($_.Name) = $vg.variables.($_.Name)}
+                  # $varName = "schemaChanged"
+                  # $vars.$varName= @{}
+                  # $vars.$varName.value = "True"
+                  # $vars.$varName.isSecret = $false
+                  # $methodParameters = @{
+                  #   id = $vg.id
+                  #   ProjectName = "$(System.TeamProject)"
+                  #   Name = "Release"
+                  #   Description = ""
+                  #   Type = "Vsts"
+                  #   Variables = $vars}
+                  # Update-VSTeamVariableGroup @methodParameters} 
 
 - stage: DBAVerificationApply
   variables: 
@@ -198,28 +201,28 @@ stages:
               deploymentAction: 'Publish'
               dacpacFile: '$(Pipeline.Workspace)/dropDacpac/Tailspin.SpaceGame.Database/bin/Debug/Tailspin.SpaceGame.Database.dacpac'
               ipDetectionMethod: 'AutoDetect'
-          - task: PowerShell@2
-            displayName: 'Remove "schemaChanged" pipeline variable'
-            inputs:
-              targetType: 'inline'
-              script: | 
-                Install-Module VSTeam -Scope CurrentUser -Force
-                Set-VSTeamAccount –Account $(Acct) -PersonalAccessToken $(PAT)
-                $methodParameters = @{
-                  ProjectName = "$(System.TeamProject)"
-                  Name = "Release"}
-                $vg = Get-VSTeamVariableGroup  @methodParameters 
-                $vars = @{}
-                $vg.variables | Get-Member -MemberType *Property | %{$vars.($_.Name) = $vg.variables.($_.Name)}
-                $vars.Remove("schemaChanged")
-                $methodParameters = @{
-                  id = $vg.id
-                  ProjectName = "$(System.TeamProject)"
-                  Name = "Release"
-                  Description = ""
-                  Type = "Vsts"
-                  Variables = $vars}
-                Update-VSTeamVariableGroup @methodParameters
+          # - task: PowerShell@2
+          #   displayName: 'Remove "schemaChanged" pipeline variable'
+          #   inputs:
+          #     targetType: 'inline'
+          #     script: | 
+          #       Install-Module VSTeam -Scope CurrentUser -Force
+          #       Set-VSTeamAccount –Account $(Acct) -PersonalAccessToken $(PAT)
+          #       $methodParameters = @{
+          #         ProjectName = "$(System.TeamProject)"
+          #         Name = "Release"}
+          #       $vg = Get-VSTeamVariableGroup  @methodParameters 
+          #       $vars = @{}
+          #       $vg.variables | Get-Member -MemberType *Property | %{$vars.($_.Name) = $vg.variables.($_.Name)}
+          #       $vars.Remove("schemaChanged")
+          #       $methodParameters = @{
+          #         id = $vg.id
+          #         ProjectName = "$(System.TeamProject)"
+          #         Name = "Release"
+          #         Description = ""
+          #         Type = "Vsts"
+          #         Variables = $vars}
+          #       Update-VSTeamVariableGroup @methodParameters
 
 - stage: 'Dev'
   displayName: 'Deploy to the dev environment'

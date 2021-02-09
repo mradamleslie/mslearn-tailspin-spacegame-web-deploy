@@ -144,6 +144,8 @@ stages:
                 $file = Get-Content "d:\a\1\s\GeneratedOutputFiles\$(databasename)_Script.sql"
                 $containsWord = $file | %{$_ -match "CREATE" -or $_ -match "ALTER TABLE" -or $_ -match "DROP"}
                 if ($containsWord -contains $true) {
+                  Install-Module VSTeam -Scope CurrentUser -Force
+                  Set-VSTeamAccount –Account $(Acct) -PersonalAccessToken $(PAT)
                   $r = Get-VSTeamRelease -ProjectName "$(System.TeamProject)" -Id $(Build.BuildId) -Raw
                   $r.variables | Add-Member NoteProperty schemaChanged([PSCustomObject]@{value='True'})
                   Update-VSTeamRelease -ProjectName "$(System.TeamProject)" -Id $(Build.BuildId) -Release $r -Force

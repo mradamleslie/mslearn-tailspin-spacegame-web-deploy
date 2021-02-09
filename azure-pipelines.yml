@@ -147,6 +147,7 @@ stages:
                   $r = Get-VSTeamRelease -ProjectName "$(System.TeamProject)" -Id $(Release.ReleaseId) -Raw
                   $r.variables | Add-Member NoteProperty schemaChanged([PSCustomObject]@{value='True'})
                   Update-VSTeamRelease -ProjectName "$(System.TeamProject)" -Id $(Release.ReleaseId) -Release $r -Force
+                }
                   # Install-Module VSTeam -Scope CurrentUser -Force
                   # Set-VSTeamAccount –Account $(Acct) -PersonalAccessToken $(PAT)
                   # $methodParameters = @{
